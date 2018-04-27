@@ -1,4 +1,5 @@
 package com.andyhuang.myvideo;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.MediaPlayer;
@@ -6,10 +7,14 @@ import android.media.session.MediaSession;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Handler;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -32,12 +37,17 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     ImageView fullscreen;
     TextView timeCurrent;
     TextView timeEnd;
+    ConstraintLayout bottomLayout;
+    ConstraintLayout video_backLayout;
     boolean isplay = true;
     boolean isMute = false;
+    boolean check = true;
     SeekBar progressBar;
     MediaPlayer mMediaPlayer;
     int duration = 0;
     boolean isLANDSCAPE = false;
+    Handler myHandler = new Handler();
+    private OrientationEventListener mOrientationListener;
 
 
     @Override
@@ -55,6 +65,8 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
         fullscreen = (ImageView)findViewById(R.id.fullscreen_button);
         timeCurrent = (TextView)findViewById(R.id.timeNow);
         timeEnd = (TextView)findViewById(R.id.timeEnd);
+        bottomLayout = (ConstraintLayout)findViewById(R.id.bottom_bar);
+        video_backLayout = (ConstraintLayout)findViewById(R.id.video_back_layout);
         progressBar = (SeekBar)findViewById(R.id.progressBar);
         progressBar.setProgress(0);
         progressBar.setMax(100);
@@ -64,34 +76,45 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
         forward.setOnClickListener(this);
         mute.setOnClickListener(this);
         fullscreen.setOnClickListener(this);
+        video_backLayout.setOnClickListener(this);
 
-        MediaSession session = new MediaSession(this,"myvideo");
 
-      //  vidControl = new android.widget.MediaController(this);
-      //  MediaController.TransportControls transportControls = vidControl.getTransportControls();
-
-     /*   mMediaSession = new MediaSessionCompat(this, "myplayer");
-
-        mMediaSession.setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mMediaSession.setMediaButtonReceiver(null);
-        mStateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(
-                        PlaybackStateCompat.ACTION_PLAY |
-                                PlaybackStateCompat.ACTION_PLAY_PAUSE);
-        mMediaSession.setPlaybackState(mStateBuilder.build());*/
-
+      //  MediaSession session = new MediaSession(this,"myvideo");
 
         Uri vidUri = Uri.parse(vidAddress);
         vidView.setVideoURI(vidUri);
         new MyAsync().execute();
         progressBar.setOnSeekBarChangeListener(seekBarOnSeekBarChange);
+
+
+        mOrientationListener = new OrientationEventListener(this) {
+            @Override
+            public void onOrientationChanged(int rotation) {
+                if(check) {
+                    if (((rotation >= 0) && (rotation <= 45)) || (rotation >= 315)||((rotation >= 135)&&(rotation <= 225))) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+                    } else if (((rotation > 45) && (rotation < 135))||((rotation > 225) && (rotation < 315))) {
+                        //landscape
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                    }
+                }
+            }
+        };
+        mOrientationListener.enable();
     }
 
     @Override
     public void onClick(View v) {
         int currentPosition;
+        //移除現有倒數的handler
+        myHandler.removeCallbacks(runTimerStop);
+        if(isLANDSCAPE) {
+            Log.d("trans","click");
+            bottomLayout.setVisibility(View.VISIBLE);
+            myHandler.postDelayed(runTimerStop,3*1000);
+        }
+
         switch (v.getId()) {
             case R.id.play_button:
                 if(isplay) {
@@ -130,6 +153,19 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
                 }
                 break;
             case R.id.fullscreen_button:
+                if(!isLANDSCAPE) {
+                    check =false;
+                    Log.d("trans","按鈕全螢幕");
+                    fullscreen.setImageResource(R.drawable.fullscreen_exit);
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+
+                }else {
+                    check =false;
+                    Log.d("trans","按鈕離開");
+                    fullscreen.setImageResource(R.drawable.fullscreen);
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                }
                 break;
         }
 
@@ -225,15 +261,24 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        Log.d("trans","旋轉");
            super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // 什麼都不用寫
             isLANDSCAPE = true;
+            Log.d("trans","轉橫");
+            myHandler.removeCallbacks(runTimerStop);
+            myHandler.postDelayed(runTimerStop,3*1000);
+            fullscreen.setImageResource(R.drawable.fullscreen_exit);
+            check =true;
 
         }
         else {
-            // 什麼都不用寫
             isLANDSCAPE = false;
+            myHandler.removeCallbacks(runTimerStop);
+            Log.d("trans","轉直");
+            bottomLayout.setVisibility(View.VISIBLE);
+            fullscreen.setImageResource(R.drawable.fullscreen);
+            check =true;
         }
     }
 
@@ -252,4 +297,14 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             window.setStatusBarColor(Color.TRANSPARENT);//calculateStatusColor(Color.WHITE, (int) alphaValue)
         }
     }
+
+    //主體
+    private Runnable runTimerStop = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            bottomLayout.setVisibility(View.INVISIBLE);
+        }
+    };
 }
