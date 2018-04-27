@@ -5,20 +5,26 @@ import android.media.MediaPlayer;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.VideoView;
 
 import java.io.IOException;
+import java.sql.Time;
+import java.text.SimpleDateFormat;
 
 
-public class VideoPlayer extends AppCompatActivity implements View.OnClickListener {
+public class VideoPlayer extends AppCompatActivity implements View.OnClickListener  {
     private MyVideoView vidView;
     private android.widget.MediaController vidControl;
     String vidAddress = "https://s3-ap-northeast-1.amazonaws.com/mid-exam/Video/protraitVideo.mp4";
@@ -30,10 +36,13 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     ImageView forward;
     ImageView mute;
     ImageView fullscreen;
+    TextView timeCurrent;
+    TextView timeEnd;
     boolean isplay = true;
     boolean isMute = false;
-    ProgressBar progressBar;
+    SeekBar progressBar;
     MediaPlayer mMediaPlayer;
+    int duration = 0;
 
 
     @Override
@@ -49,7 +58,9 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
         forward = (ImageView)findViewById(R.id.forward_button);
         mute = (ImageView)findViewById(R.id.mute_button);
         fullscreen = (ImageView)findViewById(R.id.fullscreen_button);
-        progressBar = (ProgressBar)findViewById(R.id.progressBar);
+        timeCurrent = (TextView)findViewById(R.id.timeNow);
+        timeEnd = (TextView)findViewById(R.id.timeEnd);
+        progressBar = (SeekBar)findViewById(R.id.progressBar);
         progressBar.setProgress(0);
         progressBar.setMax(100);
 
@@ -79,20 +90,8 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
 
         Uri vidUri = Uri.parse(vidAddress);
         vidView.setVideoURI(vidUri);
-        vidView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                mMediaPlayer =mp;
-                mp.setLooping(true);
-            }
-        });
-
-        vidView.start();
-
-
-
-        int x = 0;
-        x++;
+        new MyAsync().execute();
+        progressBar.setOnSeekBarChangeListener(seekBarOnSeekBarChange);
     }
 
     @Override
@@ -101,11 +100,11 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
         switch (v.getId()) {
             case R.id.play_button:
                 if(isplay) {
-                    play.setImageResource(R.drawable.pause);
+                    play.setImageResource(R.drawable.play);
                     vidView.pause();
                     isplay = false;
                 }else {
-                    play.setImageResource(R.drawable.play);
+                    play.setImageResource(R.drawable.pause);
                     vidView.start();
                     isplay = true;
                 }
@@ -140,4 +139,93 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
         }
 
     }
+
+
+    private class MyAsync extends AsyncTask<Void, Integer, Void>
+    {
+        int current = 0;
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            vidView.start();
+            vidView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+
+                public void onPrepared(MediaPlayer mp) {
+                    mMediaPlayer =mp;
+                    duration = vidView.getDuration();
+                    setTimeEnd(duration);
+                }
+            });
+
+            do {
+                current = vidView.getCurrentPosition();
+                System.out.println("duration - " + duration + " current- "
+                        + current);
+                try {
+                    publishProgress((int) (current * 100 / duration));
+                    if(progressBar.getProgress() >= 100){
+                        break;
+                    }
+                } catch (Exception e) {
+                }
+            } while (progressBar.getProgress() <= 100);
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            super.onProgressUpdate(values);
+            progressBar.setProgress(values[0]);
+            setTime(current);
+            mMediaPlayer.
+        }
+    }
+
+    void setTime(int currenTime) {
+        currenTime /= 1000;
+        String minString;
+        String secString;
+        int min = currenTime/60;
+        int sec = currenTime%60;
+        minString = min<10? "0"+min:""+min;
+        secString = sec<10? "0"+sec:""+sec;
+        timeCurrent.setText(minString+":"+secString);
+    }
+
+    void setTimeEnd(int EndTime) {
+        EndTime /= 1000;
+        String minString;
+        String secString;
+        int min = EndTime/60;
+        int sec = EndTime%60;
+        minString = min<10? "0"+min:""+min;
+        secString = sec<10? "0"+sec:""+sec;
+        timeEnd.setText(minString+":"+secString);
+    }
+
+    private SeekBar.OnSeekBarChangeListener seekBarOnSeekBarChange
+            = new SeekBar.OnSeekBarChangeListener()
+    {
+        int progressAfterSwipe;
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar)
+        {
+            //停止拖曳時觸發事件
+            progressAfterSwipe = seekBar.getProgress();
+            mMediaPlayer.seekTo(mMediaPlayer.getDuration()*progressAfterSwipe/100);
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar)
+        {
+            //開始拖曳時觸發事件
+        }
+
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+        {
+            //拖曳途中觸發事件，回傳參數 progress 告知目前拖曳數值
+        }
+    };
 }
