@@ -3,7 +3,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -23,7 +22,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 
-public class VideoPlayer extends AppCompatActivity implements View.OnClickListener  {
+public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
     private MyVideoView vidView;
     private android.widget.MediaController vidControl;
     String vidAddress = "https://s3-ap-northeast-1.amazonaws.com/mid-exam/Video/protraitVideo.mp4";
@@ -54,7 +53,6 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
 
-        setStatusBar();
         setContentView(R.layout.video_player);
         vidView = (MyVideoView) findViewById(R.id.myVideo);
 
@@ -296,23 +294,7 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             check =true;
         }
     }
-
-    private void setStatusBar() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){//Android4.4
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {//Android5.0
-            Window window = getWindow();
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(Color.TRANSPARENT);//calculateStatusColor(Color.WHITE, (int) alphaValue)
-        }
-    }
-
+    
     //主體
     private Runnable runTimerStop = new Runnable()
     {
