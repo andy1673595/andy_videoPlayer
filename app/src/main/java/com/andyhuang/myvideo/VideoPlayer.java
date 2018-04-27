@@ -1,22 +1,15 @@
 package com.andyhuang.myvideo;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Handler;
 import android.support.constraint.ConstraintLayout;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.OrientationEventListener;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -27,8 +20,6 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
     private android.widget.MediaController vidControl;
     String vidAddress = "https://s3-ap-northeast-1.amazonaws.com/mid-exam/Video/protraitVideo.mp4";
    // String vidAddress = "https://s3-ap-northeast-1.amazonaws.com/mid-exam/Video/taeyeon.mp4";
-    MediaSessionCompat mMediaSession;
-    PlaybackStateCompat.Builder mStateBuilder;
     ImageView play;
     ImageView back;
     ImageView forward;
@@ -47,6 +38,7 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
     boolean isLANDSCAPE = false;
     Handler myHandler = new Handler();
     private OrientationEventListener mOrientationListener;
+    TimeFormer timeFormer = new TimeFormer();
 
 
     @Override
@@ -182,8 +174,7 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
                 public void onPrepared(MediaPlayer mp) {
                     mMediaPlayer =mp;
                     duration = vidView.getDuration();
-                    setTimeEnd(duration);
-
+                    timeEnd.setText(timeFormer.getTimeEnd(duration));
 
                     mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
                         public void onBufferingUpdate(MediaPlayer mp, int percent)
@@ -216,30 +207,8 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
             progressBar.setProgress(values[0]);
-            setTime(current);
+            timeCurrent.setText(timeFormer.getTime(current));
         }
-    }
-
-    void setTime(int currenTime) {
-        currenTime /= 1000;
-        String minString;
-        String secString;
-        int min = currenTime/60;
-        int sec = currenTime%60;
-        minString = min<10? "0"+min:""+min;
-        secString = sec<10? "0"+sec:""+sec;
-        timeCurrent.setText(minString+":"+secString);
-    }
-
-    void setTimeEnd(int EndTime) {
-        EndTime /= 1000;
-        String minString;
-        String secString;
-        int min = EndTime/60;
-        int sec = EndTime%60;
-        minString = min<10? "0"+min:""+min;
-        secString = sec<10? "0"+sec:""+sec;
-        timeEnd.setText(minString+":"+secString);
     }
 
     private SeekBar.OnSeekBarChangeListener seekBarOnSeekBarChange
@@ -250,6 +219,7 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
         public void onStopTrackingTouch(SeekBar seekBar)
         {
             //停止拖曳時觸發事件
+            //swipe seekbar to current position
             progressAfterSwipe = seekBar.getProgress();
             mMediaPlayer.seekTo(mMediaPlayer.getDuration()*progressAfterSwipe/100);
         }
@@ -294,7 +264,7 @@ public class VideoPlayer extends BaseActivity implements View.OnClickListener  {
             check =true;
         }
     }
-    
+
     //主體
     private Runnable runTimerStop = new Runnable()
     {
