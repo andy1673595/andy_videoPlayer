@@ -31,7 +31,9 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     ImageView mute;
     ImageView fullscreen;
     boolean isplay = true;
+    boolean isMute = false;
     ProgressBar progressBar;
+    MediaPlayer mMediaPlayer;
 
 
     @Override
@@ -77,6 +79,13 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
 
         Uri vidUri = Uri.parse(vidAddress);
         vidView.setVideoURI(vidUri);
+        vidView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mMediaPlayer =mp;
+                mp.setLooping(true);
+            }
+        });
 
         vidView.start();
 
@@ -115,6 +124,16 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
                 vidView.seekTo(currentPosition);
                 break;
             case R.id.mute_button:
+                if(isMute) {
+                    mMediaPlayer.setVolume(1f,1f);
+                    mute.setImageResource(R.drawable.volume_off);
+                    isMute = false;
+
+                } else {
+                    mMediaPlayer.setVolume(0f, 0f);
+                    mute.setImageResource(R.drawable.volume_mute);
+                    isMute = true;
+                }
                 break;
             case R.id.fullscreen_button:
                 break;
