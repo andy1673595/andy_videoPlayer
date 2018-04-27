@@ -11,7 +11,9 @@ public class MyVideoView extends VideoView{
     int layout_width = 0;
     int heightAfter=0;
     int widthAfter=0;
+    int fullwidth =0;
     boolean getVideo = false;
+    boolean fullscreen = false;
     public MyVideoView(Context context) {
         super(context);
     }
@@ -29,6 +31,7 @@ public class MyVideoView extends VideoView{
         if(layout_height == 0) {
             layout_height = getHeight();
             layout_width = getWidth();
+            fullwidth = layout_height;
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         }
 
@@ -37,10 +40,15 @@ public class MyVideoView extends VideoView{
             video_width = getWidth();
             getVideo = true;
             if(video_width >= video_height) {
-                widthAfter = layout_width;
-                heightAfter = (video_height * widthAfter) / video_width;
-                int x = 0;
-                x ++;
+                if(fullscreen) {
+                    widthAfter = fullwidth;
+                    heightAfter = (video_height * widthAfter) / video_width;
+
+                }else {
+                    widthAfter = layout_width;
+                    heightAfter = (video_height * widthAfter) / video_width;
+                }
+
             } else {
                 heightAfter = layout_width;
                 widthAfter = (video_width*heightAfter)/video_height;

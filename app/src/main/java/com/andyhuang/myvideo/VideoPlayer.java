@@ -41,7 +41,7 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     ConstraintLayout video_backLayout;
     boolean isplay = true;
     boolean isMute = false;
-    boolean check = true;
+    boolean check = true; //use for check Rotating screen
     SeekBar progressBar;
     MediaPlayer mMediaPlayer;
     int duration = 0;
@@ -102,6 +102,8 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             }
         };
         mOrientationListener.enable();
+
+
     }
 
     @Override
@@ -155,14 +157,12 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             case R.id.fullscreen_button:
                 if(!isLANDSCAPE) {
                     check =false;
-                    Log.d("trans","按鈕全螢幕");
                     fullscreen.setImageResource(R.drawable.fullscreen_exit);
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
 
                 }else {
                     check =false;
-                    Log.d("trans","按鈕離開");
                     fullscreen.setImageResource(R.drawable.fullscreen);
                     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                 }
@@ -185,13 +185,23 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
                     mMediaPlayer =mp;
                     duration = vidView.getDuration();
                     setTimeEnd(duration);
+
+
+                    mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                        public void onBufferingUpdate(MediaPlayer mp, int percent)
+                        {
+                            double ratio = percent / 100.0;
+                            int bufferingLevel = (int)(mp.getDuration() * ratio);
+
+                            progressBar.setSecondaryProgress(bufferingLevel);
+                        }
+
+                    });
                 }
             });
 
             do {
                 current = vidView.getCurrentPosition();
-                System.out.println("duration - " + duration + " current- "
-                        + current);
                 try {
                     publishProgress((int) (current * 100 / duration));
                     if(progressBar.getProgress() >= 100){
@@ -261,11 +271,13 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        Log.d("trans","旋轉");
            super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            //resize video screen
+            vidView.fullscreen =true;
+            vidView.getVideo = false;
+            /**/
             isLANDSCAPE = true;
-            Log.d("trans","轉橫");
             myHandler.removeCallbacks(runTimerStop);
             myHandler.postDelayed(runTimerStop,3*1000);
             fullscreen.setImageResource(R.drawable.fullscreen_exit);
@@ -273,9 +285,12 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
 
         }
         else {
+            //resize video screen
+            vidView.fullscreen =false;
+            vidView.getVideo = false;
+            /**/
             isLANDSCAPE = false;
             myHandler.removeCallbacks(runTimerStop);
-            Log.d("trans","轉直");
             bottomLayout.setVisibility(View.VISIBLE);
             fullscreen.setImageResource(R.drawable.fullscreen);
             check =true;
