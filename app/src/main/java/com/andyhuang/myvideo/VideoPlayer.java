@@ -1,27 +1,21 @@
 package com.andyhuang.myvideo;
-
-import android.content.IntentFilter;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.media.session.MediaController;
 import android.media.session.MediaSession;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v4.media.session.MediaControllerCompat;
+import android.os.Build;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.VideoView;
-
-import java.io.IOException;
-import java.sql.Time;
-import java.text.SimpleDateFormat;
 
 
 public class VideoPlayer extends AppCompatActivity implements View.OnClickListener  {
@@ -43,13 +37,14 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
     SeekBar progressBar;
     MediaPlayer mMediaPlayer;
     int duration = 0;
+    boolean isLANDSCAPE = false;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
 
-
+        setStatusBar();
         setContentView(R.layout.video_player);
         vidView = (MyVideoView) findViewById(R.id.myVideo);
 
@@ -178,7 +173,6 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             super.onProgressUpdate(values);
             progressBar.setProgress(values[0]);
             setTime(current);
-            mMediaPlayer.
         }
     }
 
@@ -228,4 +222,34 @@ public class VideoPlayer extends AppCompatActivity implements View.OnClickListen
             //拖曳途中觸發事件，回傳參數 progress 告知目前拖曳數值
         }
     };
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+           super.onConfigurationChanged(newConfig);
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            // 什麼都不用寫
+            isLANDSCAPE = true;
+
+        }
+        else {
+            // 什麼都不用寫
+            isLANDSCAPE = false;
+        }
+    }
+
+    private void setStatusBar() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){//Android4.4
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {//Android5.0
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);//calculateStatusColor(Color.WHITE, (int) alphaValue)
+        }
+    }
 }
